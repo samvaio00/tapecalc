@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QTextCursor, QColor, QAction, QKeySequence
+from PyQt6.QtGui import QFont, QTextCursor, QAction, QKeySequence
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ class CalcEngine:
             # If no current input, just change the pending operator
 
         self.pending_op = op
-        self.last_value = val
+        self.last_value = self.accumulator  # Show running total
         self.current_input = ""
 
     def input_equals(self):
@@ -404,26 +404,16 @@ class TapeCalcWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # ---- Menu bar ----
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu("File")
-
-        save_action = QAction("Save Tape…", self)
+        # ---- Keyboard shortcuts (no menu bar) ----
+        save_action = QAction(self)
         save_action.setShortcut(QKeySequence("Ctrl+S"))
         save_action.triggered.connect(self.save_tape)
-        file_menu.addAction(save_action)
+        self.addAction(save_action)
 
-        file_menu.addSeparator()
-        exit_action = QAction("Exit", self)
-        exit_action.setShortcut(QKeySequence("Alt+F4"))
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-
-        tools_menu = menubar.addMenu("Tools")
-        markup_action = QAction("Cost / Sell / Markup…", self)
+        markup_action = QAction(self)
         markup_action.setShortcut(QKeySequence("Ctrl+M"))
         markup_action.triggered.connect(self.open_markup_dialog)
-        tools_menu.addAction(markup_action)
+        self.addAction(markup_action)
 
         # ---- Title bar area ----
         title_bar = QFrame()
@@ -733,21 +723,6 @@ def main():
     app.setStyleSheet("""
         QMainWindow {
             background-color: #f0f0e8;
-        }
-        QMenuBar {
-            background-color: #e8e8e0;
-            color: #333;
-            font-size: 12px;
-        }
-        QMenuBar::item:selected {
-            background-color: #c8d8b8;
-        }
-        QMenu {
-            background-color: #fafafa;
-            border: 1px solid #ccc;
-        }
-        QMenu::item:selected {
-            background-color: #c8d8b8;
         }
     """)
 
