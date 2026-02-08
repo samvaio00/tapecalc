@@ -32,8 +32,8 @@ def d(value):
 def fmt(value):
     """Format a Decimal for display (up to 10 decimal places, strip trailing zeros)."""
     v = d(value).quantize(Decimal("0.0000000001"), rounding=ROUND_HALF_UP)
-    # Normalise but keep at least x.xx for currency-ish values
-    s = str(v)
+    # Use fixed-point notation (avoid scientific like 0E-10)
+    s = format(v, "f")
     if "." in s:
         s = s.rstrip("0").rstrip(".")
     # Add thousand separators
@@ -46,7 +46,7 @@ def fmt(value):
     while integer_part:
         groups.append(integer_part[-3:])
         integer_part = integer_part[:-3]
-    integer_part = ",".join(reversed(groups))
+    integer_part = ",".join(reversed(groups)) if groups else "0"
     if negative:
         integer_part = "-" + integer_part
     if len(parts) == 2:
@@ -203,53 +203,28 @@ class CalcEngine:
 
     def memory_add(self):
         self.memory += self.get_display_value()
+        self.current_input = ""
 
     def memory_subtract(self):
         self.memory -= self.get_display_value()
+        self.current_input = ""
 
     def memory_recall(self):
-        self.current_input = str(self.memory)
-        self.last_value = self.memory
+        val = self.memory
+        self.current_input = str(val)
+        self.last_value = val
 
     def memory_clear(self):
         self.memory = Decimal("0")
 
     def recalculate_from_tape(self, tape_lines):
         """Recalculate totals from edited tape lines."""
-        self.tape_lines = tape_lines
         recalculated = []
-        accumulator = Decimal("0")
-        pending_op = None
-
-        for line in tape_lines:
-            if line.is_result:
-                # Recalculate total
-                recalculated.append(TapeLine("", accumulator, line.label, is_result=True))
-                continue
-
-            if line.operator in ("+", "-", "×", "÷", "*", "/"):
-                if pending_op is None:
-                    accumulator = line.value
-                else:
-                    accumulator = self._apply_op(pending_op, accumulator, line.value)
-                pending_op = None
-                recalculated.append(line)
-                # The next operator comes from the next non-result line
-            elif line.operator == "" and not line.is_result:
-                # First entry or standalone value
-                accumulator = line.value
-                recalculated.append(line)
-            else:
-                recalculated.append(line)
-
-        # Update pending ops by scanning operators
-        # Actually let's do a proper recalc
-        recalculated2 = []
         acc = Decimal("0")
         first = True
         for line in tape_lines:
             if line.is_result:
-                recalculated2.append(TapeLine("", acc, line.label, is_result=True))
+                recalculated.append(TapeLine("", acc, line.label, is_result=True))
                 first = True
                 continue
             if first:
@@ -258,12 +233,12 @@ class CalcEngine:
             else:
                 op = line.operator if line.operator else "+"
                 acc = self._apply_op(op, acc, line.value)
-            recalculated2.append(TapeLine(line.operator, line.value, line.label, line.is_result))
+            recalculated.append(TapeLine(line.operator, line.value, line.label, line.is_result))
 
-        self.tape_lines = recalculated2
+        self.tape_lines = recalculated
         self.accumulator = acc
         self.last_value = acc
-        return recalculated2
+        return recalculated
 
 
 # ---------------------------------------------------------------------------
@@ -692,7 +667,7 @@ class TapeCalcWindow(QMainWindow):
             # Result lines have format: "  number  label"
             # Regular lines have format: "op  number  label"
             m = re.match(
-                r'^([+\-×÷*/])?\s*([\d,]+\.?\d*)\s*(.*)$', line
+                r'^([+\-×÷*/])?\s*(-?[\d,]+\.?\d*)\s*(.*)$', line
             )
             if m:
                 op = m.group(1) or ""
