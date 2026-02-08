@@ -441,6 +441,7 @@ class TapeCalcWindow(QMainWindow):
             }
         """)
         self.tape_edit.setMinimumHeight(180)
+        self.tape_edit.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # Only focus when clicked
         self.tape_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.tape_edit.textChanged.connect(self._on_tape_edited)
         self._tape_updating = False  # Guard against recursive updates
@@ -522,6 +523,7 @@ class TapeCalcWindow(QMainWindow):
 
     def _add_btn(self, grid, text, row, col, bg, fg, callback, colspan=1):
         btn = QPushButton(text)
+        btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # Don't steal keyboard focus
         btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         btn.setMinimumSize(QSize(70, 48))
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
