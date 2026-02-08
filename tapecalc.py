@@ -166,7 +166,6 @@ class CalcEngine:
                     self.accumulator = self._apply_op(self.pending_op, self.accumulator, val)
                 self.pending_op = None
 
-        self.tape_lines.append(TapeLine("", self.accumulator, "total", is_result=True))
         self.last_value = self.accumulator
         self.current_input = ""
         self.has_started = False
@@ -218,27 +217,19 @@ class CalcEngine:
         self.memory = Decimal("0")
 
     def recalculate_from_tape(self, tape_lines):
-        """Recalculate totals from edited tape lines."""
-        recalculated = []
+        """Recalculate running total from edited tape lines."""
         acc = Decimal("0")
-        first = True
-        for line in tape_lines:
-            if line.is_result:
-                recalculated.append(TapeLine("", acc, line.label, is_result=True))
-                first = True
-                continue
-            if first:
+        for i, line in enumerate(tape_lines):
+            if i == 0:
                 acc = line.value
-                first = False
             else:
                 op = line.operator if line.operator else "+"
                 acc = self._apply_op(op, acc, line.value)
-            recalculated.append(TapeLine(line.operator, line.value, line.label, line.is_result))
 
-        self.tape_lines = recalculated
+        self.tape_lines = tape_lines
         self.accumulator = acc
         self.last_value = acc
-        return recalculated
+        return tape_lines
 
 
 # ---------------------------------------------------------------------------
@@ -631,12 +622,9 @@ class TapeCalcWindow(QMainWindow):
         self._tape_updating = True
         lines = []
         for tl in self.engine.tape_lines:
-            if tl.is_result:
-                lines.append(f"  {fmt(tl.value)}  {tl.label}")
-            else:
-                op = tl.operator if tl.operator else " "
-                lbl = f"  {tl.label}" if tl.label else ""
-                lines.append(f"{op}  {fmt(tl.value)}{lbl}")
+            op = tl.operator if tl.operator else " "
+            lbl = f"  {tl.label}" if tl.label else ""
+            lines.append(f"{op}  {fmt(tl.value)}{lbl}")
         self.tape_edit.setPlainText("\n".join(lines))
         # Scroll to bottom
         cursor = self.tape_edit.textCursor()
@@ -668,12 +656,11 @@ class TapeCalcWindow(QMainWindow):
                 except InvalidOperation:
                     continue
                 label = m.group(3).strip()
-                is_result = label in ("total", "subtotal", "Total", "Subtotal")
                 if op == "*":
                     op = "×"
                 elif op == "/":
                     op = "÷"
-                parsed.append(TapeLine(op, val, label, is_result))
+                parsed.append(TapeLine(op, val, label))
         if parsed:
             recalculated = self.engine.recalculate_from_tape(parsed)
             self._update_display()
