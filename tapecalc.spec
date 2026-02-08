@@ -5,7 +5,7 @@ a = Analysis(
     ['tapecalc.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('tapecalc.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -36,5 +36,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,               # Add an .ico file here if desired
+    icon='tapecalc.ico',
 )

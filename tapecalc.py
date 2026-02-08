@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QTextCursor, QAction, QKeySequence
+from PyQt6.QtGui import QFont, QTextCursor, QAction, QKeySequence, QIcon
 
 
 # ---------------------------------------------------------------------------
@@ -383,6 +383,10 @@ class TapeCalcWindow(QMainWindow):
         self.setWindowTitle("TapeCalc")
         self.setMinimumSize(380, 620)
         self.resize(400, 700)
+        # Set window icon — works for title bar and taskbar
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tapecalc.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self._build_ui()
         self._update_display()
 
